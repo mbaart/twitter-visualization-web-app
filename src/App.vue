@@ -1,14 +1,16 @@
 <template>
   <div id="app">
     <About msg="This is our project blah, blah, blah..."/>
-    <Me name="doge" description="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."/>
+    <ul v-for= "(person, index) in people" :key = index>
+      <Me :isFlipped="(index % 2 == 0)"   :name=person.name :description=person.description />
+    </ul>
   </div>
 </template>
 
 <script>
-// import Vue from 'vue'
 import About from './components/About.vue'
 import Me from './components/Me.vue'
+import members from './assets/members.json'
 
 export default {
   name: 'app',
@@ -16,6 +18,11 @@ export default {
     About,
     Me
   },
+  data(){
+    return{
+      people: members.people
+    }
+  }
 }
 </script>
 

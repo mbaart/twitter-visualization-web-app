@@ -1,10 +1,11 @@
 <template>
   <div id="me">
-    <h1> Who we are. </h1>
-    <img class="picture" :src="require('../assets/' + name + '.jpg')"/>
-    <div class="descripton"> 
-      <h1> {{ name }} </h1>
-      <p> {{ description }} </p>
+    <div class="row">
+      <img class="picture" :class="{flip: isFlipped}" :src="require('../assets/people/' + name + '.jpg')"/>
+      <div class="descripton"> 
+        <h1> {{ name }} </h1>
+        <p> {{ description }} </p>
+      </div>
     </div>
   </div>
 </template>
@@ -16,6 +17,7 @@ export default {
   props: {
     name: String,
     description: String,
+    isFlipped: Boolean,
   }
 }
 </script>
@@ -34,6 +36,16 @@ export default {
 
     .description {
         float: left;
-        width: 60%;
+        width: 50%;
+    }
+    
+    .picture.flip {
+      float: right;
+    }
+
+    .row:after {
+      content: "";
+      display: flex;
+      clear: both;
     }
 </style>
