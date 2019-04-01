@@ -18,7 +18,9 @@
 <script src="http://d3js.org/d3-selection-multi.v1.js"></script>
 
 <script type="text/javascript">
-    var colors = d3.scaleOrdinal(d3.schemeCategory10);
+    var color = d3.scaleLinear(d3.schemeCategory10)
+        .domain([0,100])
+        .range(["#AED6F1","#154360"])
     var svg = d3.select("svg"),
         width = +svg.attr("width"),
         height = +svg.attr("height"),
@@ -95,7 +97,7 @@
               norm = ((d.followers-min)/(max-min))
               return 2+(norm*20);
             })
-            .style("fill", function (d, i) {return colors(i);})
+            .style("fill", function (d, i) {return colors(d.following);})
 
         node.append("title")
             .text(function (d) {
