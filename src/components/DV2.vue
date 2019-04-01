@@ -1,30 +1,201 @@
 <template>
-  <div class="container">
-    <svg ref="dv" width="500" height="300"></svg>
-    <p> {{msg}} </p>
-  </div>
+  <svg width="960" height="600"></svg>
 </template>
 
 <script>
 const d3 = require("d3");
+import "d3-selection";
+import "d3-selection-multi";
+
 export default {
   name: "DV2",
   props: {
     msg: String
   },
 
-  mounted: function() {
-    d3.select(this.$refs.dv)
-      .append("circle")
-      .attr("cx", "250")
-      .attr("cy", "150")
-      .attr("r", "100");
+  mounted() {
+    var colors = d3.scaleOrdinal(d3.schemeCategory10);
+    var svg = d3.select("svg"),
+      width = +svg.attr("width"),
+      height = +svg.attr("height"),
+      node,
+      link,
+      edgepaths;
+
+    svg
+      .append("defs")
+      .append("marker")
+      .attrs({
+        id: "arrowhead",
+        viewBox: "-0 -5 10 10",
+        refX: 13,
+        refY: 0,
+        orient: "auto",
+        markerWidth: 13,
+        markerHeight: 13,
+        xoverflow: "visible"
+      })
+      .append("svg:path")
+      .attr("d", "M 0,-5 L 10 ,0 L 0,5")
+      .attr("fill", "#999")
+      .style("stroke", "none");
+
+    var simulation = d3
+      .forceSimulation()
+      .force(
+        "link",
+        d3
+          .forceLink()
+          .id(function(d) {
+            return d.id;
+          })
+          .distance(100)
+          .strength(1)
+      )
+      .force("charge", d3.forceManyBody())
+      .force("center", d3.forceCenter(width / 2, height / 2));
+
+    d3.json("graph.json", function(error, graph) {
+      if (error) throw error;
+      var max = -1;
+      var min = 1000;
+      for (var i = 0; i < graph.nodes.length; i++) {
+        if (graph.nodes[i].followers > max) {
+          max = graph.nodes[i].followers;
+        }
+        if (graph.nodes[i].followers < min) {
+          min = graph.nodes[i].followers;
+        }
+      }
+      update(graph.links, graph.nodes, min, max);
+    });
+
+    function update(links, nodes, min, max) {
+      link = svg
+        .selectAll(".link")
+        .data(links)
+        .enter()
+        .append("line")
+        .attr("class", "link")
+        .attr("marker-end", "url(#arrowhead)");
+
+      edgepaths = svg
+        .selectAll(".edgepath")
+        .data(links)
+        .enter()
+        .append("path")
+        .attrs({
+          class: "edgepath",
+          "fill-opacity": 0,
+          "stroke-opacity": 0,
+          id: function(d, i) {
+            return "edgepath" + i;
+          }
+        })
+        .style("pointer-events", "none");
+
+      node = svg
+        .selectAll(".node")
+        .data(nodes)
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .call(
+          d3
+            .drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+          //.on("end", dragended)
+        );
+
+      node
+        .append("circle")
+        .attr("r", function(d) {
+          let norm = (d.followers - min) / (max - min);
+          return 2 + norm * 20;
+        })
+        .style("fill", function(d, i) {
+          return colors(i);
+        });
+
+      node.append("title").text(function(d) {
+        let txt =
+          "ID: " +
+          d.id +
+          "\nfollowers: " +
+          d.followers +
+          "\nfollowing: " +
+          d.following;
+        return txt;
+      });
+
+      simulation.nodes(nodes).on("tick", () => ticked(min, max));
+
+      simulation.force("link").links(links);
+    }
+    function ticked(min, max) {
+      link
+        .attr("x1", function(d) {
+          return d.source.x;
+        })
+        .attr("y1", function(d) {
+          return d.source.y;
+        })
+        .attr("x2", function(d) {
+          let norm = (d.target.followers - min) / (max - min);
+          let padding = 2 + norm * 20;
+          const deltaX = d.target.x - d.source.x;
+          const deltaY = d.target.y - d.source.y;
+          const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          const normX = deltaX / dist;
+          const targetPadding = padding;
+          const targetX = d.target.x - targetPadding * normX;
+          return targetX;
+        })
+        .attr("y2", function(d) {
+          let norm = (d.target.followers - min) / (max - min);
+          let padding = 2 + norm * 20;
+          const deltaX = d.target.x - d.source.x;
+          const deltaY = d.target.y - d.source.y;
+          const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+          const normY = deltaY / dist;
+          const targetPadding = padding;
+          const targetY = d.target.y - targetPadding * normY;
+          return targetY;
+        });
+
+      node.attr("transform", function(d) {
+        return "translate(" + d.x + ", " + d.y + ")";
+      });
+
+      edgepaths.attr("d", function(d) {
+        return (
+          "M " +
+          d.source.x +
+          " " +
+          d.source.y +
+          " L " +
+          d.target.x +
+          " " +
+          d.target.y
+        );
+      });
+    }
+
+    function dragstarted(d) {
+      if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(d) {
+      d.fx = d3.event.x;
+      d.fy = d3.event.y;
+    }
   }
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-
-
 </style>
